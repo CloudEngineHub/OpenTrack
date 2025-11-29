@@ -25,6 +25,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
    # Install torch to convert JAX to Torch. We don't require the GPU version of torch, but you can install any version as you like.
    pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
    pip install -r requirements.txt
+   export MJX_SKIP_MENAGERIE_CLONE=1 
    ```
 
 5. Download the [mocap data](https://huggingface.co/datasets/robfiras/loco-mujoco-datasets/tree/main/Lafan1/mocap/UnitreeG1) and put them under `data/mocap/`. Thanks for the retargeting motions of LAFAN1 dataset from [LocoMuJoCo](https://github.com/robfiras/loco-mujoco/)!
