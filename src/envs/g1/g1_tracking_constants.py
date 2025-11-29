@@ -18,8 +18,8 @@ from pathlib import Path
 import numpy as np
 
 ROOT_PATH = Path(__file__).parent.parent.parent.parent / "data" / "xmls" / "unitree_g1"
-FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "scene_mjx_feetonly_flat_terrain.xml"
-FEET_ONLY_ROUGH_TERRAIN_XML = ROOT_PATH / "scene_mjx_feetonly_rough_terrain.xml"
+FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "scene_mjx_wholebody_flat_terrain.xml"
+FEET_ONLY_ROUGH_TERRAIN_XML = ROOT_PATH / "scene_mjx_wholebody_rough_terrain.xml"
 
 NUM_JOINT = 29
 

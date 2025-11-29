@@ -53,7 +53,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
    python train_policy.py --exp_name rough_terrain --terrain_type rough_terrain
    
    # For debug mode (quick testing training without logging)
-   # python train_policy.py --exp_name debug 
+   python train_policy.py --exp_name debug 
    ```
 
 2. Evaluate the model
