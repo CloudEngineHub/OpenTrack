@@ -3,7 +3,6 @@
 MUJOCO_LOG.TXT
 
 # Temporary files
-experiments/
 tmp/
 
 # Log files
@@ -182,4 +181,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 /swanlog/
-/data/mocap
+/data/mocap/
+/experiments/lafan_generalist/videos/
