@@ -43,8 +43,18 @@ This repository is the official implementation of OpenTrack, an open-source huma
                |--- ...
    ```
 
-## Usage ##
+## Usage
 
+### Play pretrained checkpoints
+1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `experiments/`.
+
+2. Run the evaluation script:
+   ```shell
+   # your_exp_name=<timestamp>_<exp_name>
+   python play_policy.py --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [---play_ref_motion]
+   ```
+As of **November 30, 2025**, we have open-sourced **a generalist model on LaFAN1**, daggered from four teachers. This checkpoint was trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
+### Train from scratch
 1. Train the model
    ```shell
    # Train on a flat terrain:
