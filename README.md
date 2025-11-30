@@ -28,7 +28,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 - [ ] Release DAgger code
 - [ ] Release AnyAdapter
 - [ ] Release more pretrained checkpoints
-- [ ] Release real deployment code
+- [ ] Release real-world deployment code
 
 # Prepare
 
