@@ -14,7 +14,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 # News 🚩
 
-[November 30, 2025] LAFAN1 generalist V1 released.
+[November 30, 2025] LAFAN1 generalist v1 released. **Now you can track cartwheel, kungfu, fall and getup, and many other motions within a single policy.**
 
 [September 19, 2025] Simple Domain Randomization released.
 
@@ -24,7 +24,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 - [x] Release motion tracking codebase
 - [x] Release simple domain randomization
-- [x] Release pretrained LAFAN1 generalist V1 checkpoints
+- [x] Release pretrained LAFAN1 generalist v1 checkpoints
 - [ ] Release DAgger code
 - [ ] Release AnyAdapter
 - [ ] Release more pretrained checkpoints
