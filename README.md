@@ -11,6 +11,25 @@
 This repository is the official implementation of OpenTrack, an open-source humanoid motion tracking codebase that uses MuJoCo for simulation and supports multi-GPU parallel training.
 </div>
 
+
+# News 🚩
+
+[November 30, 2025] LAFAN1 generalist V1 released.
+
+[September 19, 2025] Simple Domain Randomization released.
+
+[September 19, 2025] Tracking codebase released.
+
+# TODOs
+
+- [x] Release motion tracking codebase
+- [x] Release simple domain randomization
+- [x] Release pretrained LAFAN1 generalist V1 checkpoints
+- [ ] Release DAgger code
+- [ ] Release AnyAdapter
+- [ ] Release more pretrained checkpoints
+- [ ] Release real deployment code
+
 # Prepare
 
 1. Clone the repository:
@@ -53,7 +72,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
    # your_exp_name=<timestamp>_<exp_name>
    python play_policy.py --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [---play_ref_motion]
    ```
-As of **November 30, 2025**, we have open-sourced **a generalist model on LaFAN1**, daggered from four teachers. This checkpoint was trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
+As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1**, daggered from four teachers. This checkpoint was trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
 ### Train from scratch
 1. Train the model
    ```shell
@@ -80,13 +99,6 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LaFAN1
    # your_exp_name=<timestamp>_<exp_name>
    python play_policy.py --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [---play_ref_motion]
    ```
-
-# TODOs
-
-- [x] Release AnyTracker
-- [x] Release dynamics disturbances
-- [ ] Release AnyAdapter
-- [ ] Release real deployment code
    
 ## Acknowledgement
 
