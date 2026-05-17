@@ -14,6 +14,9 @@ class MLP_Policy:
     ):
         self.policy_obs_key = config.policy_obs_key
         self.policy_auxiliary_obs_key = config.policy_auxiliary_obs_key
+        self.loss_type = config.loss_type
+        self.mse_loss_coef = config.mse_loss_coef
+        self.mae_loss_coef = config.mae_loss_coef
 
         if config.output_residual_action:
             self.model = MLP_optimized(
@@ -43,8 +46,24 @@ class MLP_Policy:
         obs: torch.Tensor = obs_dict.get(self.policy_obs_key, None)
 
         pred_action = self.model(obs)
-        bc_loss = torch.nn.functional.mse_loss(pred_action, target_action)
-        info = {"bc_loss": bc_loss.item(), "action": pred_action}
+        mse_loss = torch.nn.functional.mse_loss(pred_action, target_action)
+        mae_loss = torch.nn.functional.l1_loss(pred_action, target_action)
+
+        if self.loss_type == "mse":
+            bc_loss = self.mse_loss_coef * mse_loss
+        elif self.loss_type == "mae":
+            bc_loss = self.mae_loss_coef * mae_loss
+        elif self.loss_type == "mse+mae":
+            bc_loss = self.mse_loss_coef * mse_loss + self.mae_loss_coef * mae_loss
+        else:
+            raise ValueError(f"Unsupported loss_type: {self.loss_type}")
+
+        info = {
+            "bc_loss": bc_loss.item(),
+            "bc_mse_loss": mse_loss.item(),
+            "bc_mae_loss": mae_loss.item(),
+            "action": pred_action,
+        }
         return bc_loss, info
 
 

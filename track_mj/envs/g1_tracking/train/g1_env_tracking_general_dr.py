@@ -53,13 +53,14 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
         history_len=0,
         soft_joint_pos_limit_factor=0.95,
         reference_traj_config=config_dict.create(
-            name={"lafan1": consts.LAFAN1_SPECIALIST_DATASETS_4},
+            name={"lafan1": consts.LAFAN1_SPECIALIST_DATASETS_3},
             random_start=True,
             fixed_start_frame=0,        # only works if random_start is False
         ),
         termination_config=config_dict.create(
             root_height_threshold=0.3,
             rigid_body_dif_threshold=0.5,
+            diff_gvec_threshold=1.0,
         ),
         noise_config=config_dict.create(
             level=1.0,
@@ -89,6 +90,7 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
                 joint_pos_tracking=0.75,
                 joint_vel_tracking=0.5,
                 roll_pitch_tracking=1.0,
+                gvec_tracking=0.0,
                 root_linvel_tracking=1.0,
                 root_angvel_tracking=1.0,
                 root_height_tracking=1.0,
@@ -119,6 +121,7 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
                 root_linvel_sigma=1.0,
                 root_angvel_sigma=10.0,
                 roll_pitch_sigma=0.2,
+                gvec_sigma=0.2,
                 # aux height and contact
                 root_height_sigma=0.1,
                 feet_height_sigma=0.1,
@@ -158,6 +161,7 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
             "gvec_pelvis",
             "linvel_pelvis",
             "dif_torso_rp",
+            # "dif_gvec_pelvis",
             "joint_pos",
             "joint_vel",
             "last_motor_targets",

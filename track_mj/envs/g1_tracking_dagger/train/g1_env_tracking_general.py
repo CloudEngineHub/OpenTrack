@@ -58,6 +58,7 @@ def g1_tracking_general_task_config() -> config_dict.ConfigDict:
         termination_config=config_dict.create(
             root_height_threshold=0.3,
             rigid_body_dif_threshold=0.5,
+            diff_gvec_threshold=1.0,
         ),
         noise_config=config_dict.create(
             level=1.0,
@@ -87,6 +88,7 @@ def g1_tracking_general_task_config() -> config_dict.ConfigDict:
                 joint_pos_tracking=0.75,
                 joint_vel_tracking=0.5,
                 roll_pitch_tracking=1.0,
+                gvec_tracking=0.0,
                 root_linvel_tracking=1.0,
                 root_angvel_tracking=1.0,
                 root_height_tracking=1.0,
@@ -117,6 +119,7 @@ def g1_tracking_general_task_config() -> config_dict.ConfigDict:
                 root_linvel_sigma=1.0,
                 root_angvel_sigma=10.0,
                 roll_pitch_sigma=0.2,
+                gvec_sigma=0.2,
                 # aux height and contact
                 root_height_sigma=0.1,
                 feet_height_sigma=0.1,
@@ -799,6 +802,16 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
         return self._viewer.render(self._data, traj_info, record)
 
+    def _dif_gvec_pelvis(self, data: mjx.Data, traj_data: TrajectoryData) -> jax.Array:
+        """Gravity direction in pelvis IMU frame: reference minus current (same convention as other dif_*)."""
+        down = jp.array([0.0, 0.0, -1.0])
+        # TrajectoryData stores per-site rotation as length-9 row; mjx.Data uses (3, 3) per site.
+        R_ref = traj_data.site_xmat[self._pelvis_imu_site_id].reshape(3, 3)
+        R_cur = data.site_xmat[self._pelvis_imu_site_id].reshape(3, 3)
+        gvec_ref = R_ref.T @ down
+        gvec_cur = R_cur.T @ down
+        return gvec_ref - gvec_cur
+
     def stop(self) -> None:
         if self._viewer is not None:
             self._video_file_path = self._viewer.stop()
@@ -814,6 +827,9 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         rigid_body_position_termination = jp.any(
             norm_dif_rigid_body_pos_local > self._config.termination_config.rigid_body_dif_threshold
         )
+        # dif_gvec_pelvis = self._dif_gvec_pelvis(data, traj_data)
+        # diff_gvec_dist = jp.sum(jp.abs(dif_gvec_pelvis), axis=-1)
+        # gvec_termination = diff_gvec_dist > self._config.termination_config.diff_gvec_threshold
 
         return (
             fall_termination | jp.isnan(data.qpos).any() | jp.isnan(data.qvel).any() | rigid_body_position_termination
@@ -822,9 +838,10 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
     def _get_obs(self, data: mjx.Data, traj_data: TrajectoryData, info: dict[str, Any]) -> mjx_env.Observation:
         # body pose
         gyro_pelvis = self.get_gyro(data, "pelvis")
-        gvec_pelvis = data.site_xmat[self._pelvis_imu_site_id].T @ jp.array([0, 0, -1])
+        gvec_pelvis = data.site_xmat[self._pelvis_imu_site_id].reshape(3, 3).T @ jp.array([0, 0, -1])
         linvel_pelvis = self.get_local_linvel(data, "pelvis")
         dif_torso_rp = gmth.calculate_dif_torso_rp(data, traj_data)
+        dif_gvec_pelvis = self._dif_gvec_pelvis(data, traj_data)
 
         # joint
         joint_pos = data.qpos[7:]
@@ -904,6 +921,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
             "gvec_pelvis": gvec_pelvis,
             "linvel_pelvis": linvel_pelvis * self._config.obs_scales_config.joint_vel,
             "dif_torso_rp": dif_torso_rp,
+            "dif_gvec_pelvis": dif_gvec_pelvis,
             "joint_pos": (joint_pos - self._default_qpos)[self.obs_joint_ids],
             "joint_vel": joint_vel[self.obs_joint_ids] * self._config.obs_scales_config.joint_vel,
             "last_motor_targets": info["last_motor_targets"],
@@ -959,6 +977,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         dif_root_height = traj_data.qpos[2] - data.qpos[2]
         dif_feet_height = traj_data.site_xpos[self._feet_all_site_id, 2] - data.site_xpos[self._feet_all_site_id, 2]
         dif_torso_rp = gmth.calculate_dif_torso_rp(data, traj_data)
+        dif_gvec_pelvis = self._dif_gvec_pelvis(data, traj_data)
 
         termination = self._get_termination(data, traj_data, info)
 
@@ -976,6 +995,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
             "root_linvel_tracking": self._reward_root_linvel_tracking(dif_root_linvel),
             "root_angvel_tracking": self._reward_root_angvel_tracking(dif_root_angvel),
             "roll_pitch_tracking": self._reward_roll_pitch_tracking(dif_torso_rp),
+            "gvec_tracking": self._reward_gvec_tracking(dif_gvec_pelvis),
             # penalty reward
             "penalty_torque": self._reward_penalty_torque(torque),
             "penalty_action_rate": self._reward_penalty_action_rate(motor_targets, info["last_motor_targets"]),
@@ -1063,6 +1083,12 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         diff_rp_dist = jp.sum(jp.abs(dif_rp), axis=-1)
 
         rew = jp.exp(-diff_rp_dist / self._config.reward_config.auxiliary.roll_pitch_sigma)
+        return rew
+
+    def _reward_gvec_tracking(self, dif_gvec: jax.Array) -> jax.Array:
+        diff_gvec_dist = jp.sum(jp.abs(dif_gvec), axis=-1)
+
+        rew = jp.exp(-diff_gvec_dist / self._config.reward_config.auxiliary.gvec_sigma)
         return rew
 
     def _reward_penalty_torque(self, torque: jax.Array) -> jax.Array:

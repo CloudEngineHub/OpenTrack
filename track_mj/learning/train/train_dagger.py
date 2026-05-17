@@ -17,6 +17,7 @@ from ml_collections import config_dict
 from typing import List, Tuple, Dict, Any, Union
 import torch
 import torch.distributed as dist
+from torch.distributed.elastic.multiprocessing.errors import record
 
 from track_mj.learning.models.dagger.policy_args import PolicyArgs
 
@@ -415,6 +416,7 @@ def get_trajectory_handler(env, args: Args, traj_sample_cluster_ids: Dict[str, i
     return trajectory_data, obs_size, act_size
 
 
+@record
 def train(args: Args):
     student_env_class = tmj.registry.get(args.task, "tracking_dagger_train_env_class")
     student_task_cfg = tmj.registry.get(args.task, "tracking_dagger_config")

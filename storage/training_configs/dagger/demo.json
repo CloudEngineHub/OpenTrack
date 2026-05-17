@@ -3,8 +3,8 @@
         {
             "cluster_id": 0,
             "prob": 0.25,
-            "teacher_ckpt_dir": "storage/logs/track/04202149_G1TrackingGeneralDR_specialist_1",
-            "teacher_onnx_path": "storage/logs/track/04202149_G1TrackingGeneralDR_specialist_1/checkpoints/002000158720/policy.onnx",
+            "teacher_ckpt_dir": "storage/logs/track/04301847_G1TrackingGeneralDR_specialist1",
+            "teacher_onnx_path": "storage/logs/track/04301847_G1TrackingGeneralDR_specialist1/checkpoints/002000158720/policy.onnx",
             "motions": [
                 "dance1_subject1",
                 "dance1_subject2",
@@ -19,8 +19,8 @@
         {
             "cluster_id": 1,
             "prob": 0.25,
-            "teacher_ckpt_dir": "storage/logs/track/04182254_G1TrackingGeneralDR_specialist_2",
-            "teacher_onnx_path": "storage/logs/track/04182254_G1TrackingGeneralDR_specialist_2/checkpoints/002000158720/policy.onnx",
+            "teacher_ckpt_dir": "storage/logs/track/04301944_G1TrackingGeneralDR_specialist2",
+            "teacher_onnx_path": "storage/logs/track/04301944_G1TrackingGeneralDR_specialist2/checkpoints/002000158720/policy.onnx",
             "motions": [
                 "fallAndGetUp1_subject1",
                 "fallAndGetUp1_subject4",
@@ -33,8 +33,8 @@
         {
             "cluster_id": 2,
             "prob": 0.25,
-            "teacher_ckpt_dir": "storage/logs/track/04212232_G1TrackingGeneralDR_specialist_3",
-            "teacher_onnx_path": "storage/logs/track/04212232_G1TrackingGeneralDR_specialist_3/checkpoints/002000158720/policy.onnx",
+            "teacher_ckpt_dir": "storage/logs/track/05010019_G1TrackingGeneralDR_specialist3",
+            "teacher_onnx_path": "storage/logs/track/05010019_G1TrackingGeneralDR_specialist3/checkpoints/002000158720/policy.onnx",
             "motions": [
                 "fight1_subject2",
                 "fight1_subject3",
@@ -46,8 +46,8 @@
         {
             "cluster_id": 3,
             "prob": 0.25,
-            "teacher_ckpt_dir": "storage/logs/track/04212237_G1TrackingGeneralDR_specialist_4",
-            "teacher_onnx_path": "storage/logs/track/04212237_G1TrackingGeneralDR_specialist_4/checkpoints/002000158720/policy.onnx",
+            "teacher_ckpt_dir": "storage/logs/track/05010037_G1TrackingGeneralDR_specialist4",
+            "teacher_onnx_path": "storage/logs/track/05010037_G1TrackingGeneralDR_specialist4/checkpoints/002000158720/policy.onnx",
             "motions": [
                 "jumps1_subject1",
                 "jumps1_subject2",

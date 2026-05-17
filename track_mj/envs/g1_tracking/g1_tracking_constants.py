@@ -351,7 +351,6 @@ LAFAN1_DATASETS = [
 ]
 
 LAFAN1_SPECIALIST_DATASETS_1 = [
-    'dance1_subject1',
     'dance1_subject2',
     'dance1_subject3',
     'dance2_subject1',
@@ -380,29 +379,37 @@ LAFAN1_SPECIALIST_DATASETS_3 = [
 
 LAFAN1_SPECIALIST_DATASETS_4 = [
     'jumps1_subject1',
-    'jumps1_subject2',
     'jumps1_subject5',
     'run1_subject2',
     'run1_subject5',
     'run2_subject1',
     'run2_subject4',
+]
+
+LAFAN1_SPECIALIST_DATASETS_5 = [
     'sprint1_subject2',
     'sprint1_subject4',
     'walk1_subject1',
     'walk1_subject2',
     'walk1_subject5',
     'walk2_subject1',
-    'walk2_subject3',
     'walk2_subject4',
-    'walk3_subject1',
     'walk3_subject2',
-    'walk3_subject3',
-    'walk3_subject4',
     'walk3_subject5',
     'walk4_subject1',
 ]
 
-TEST = [
-    # "Random_001_Tennis 001",
-    "Random_001_Tennis 001 no"
+LAFAN1_SPECIALIST_DATASETS_6 = [
+    'walk2_subject3',
+    'walk3_subject1',
+    'walk3_subject3',
+    'walk3_subject4',
+]
+
+LAFAN1_SPECIALIST_DATASETS_7 = [
+    'dance1_subject1',
+]
+
+LAFAN1_SPECIALIST_DATASETS_8 = [
+    'jumps1_subject2',
 ]

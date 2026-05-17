@@ -544,7 +544,7 @@ def dagger(
             metrics = state_tj.state_mjx.info["episode_metrics"]
             # torch, scaler
             total_loss = loss.clone().detach().cpu()
-            mae_loss = torch.mean(torch.abs(teacher_action_th_batch - student_action_th_batch)).cpu()
+            mae_loss = torch.mean(torch.abs(teacher_action_th_batch - student_action_th_batch)).cpu() # only for log
             # bc_loss, kl_loss, mu_reg_loss
             bc_loss = info_student.get("bc_loss", 0.0)
             kl_loss = info_student.get("kl_loss", 0.0)
