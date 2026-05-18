@@ -24,8 +24,8 @@ class PolicyArgs:
     mae_loss_coef: float = 1.0
 
     # ===== MLP config =====
-    mlp_hidden_dim: list[int] = field(default_factory=lambda: [4096, 4096, 2048, 2048, 1024, 1024, 512])
-    # mlp_hidden_dim: list[int] = field(default_factory=lambda: [1024, 1024, 512, 512, 256])
+    # mlp_hidden_dim: list[int] = field(default_factory=lambda: [4096, 4096, 2048, 2048, 1024, 1024, 512])
+    mlp_hidden_dim: list[int] = field(default_factory=lambda: [1024, 1024, 512, 512, 256])
     # mlp_hidden_dim: list[int] = field(default_factory=lambda: [512, 512, 256, 256, 128])
     mlp_activate_final: bool = False
 

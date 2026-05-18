@@ -12,6 +12,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 </div>
 
 # News 🚩
+[May 18, 2026] LAFAN1 generalist v2 released. **A single policy can accurately track all 40/40 motions in LaFAN1, including highly challenging ones.**
 
 [April 24, 2026] DAgger training code released. **Now you can distill your teacher trackers into a generalist student tracker.**
 
@@ -25,10 +26,9 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 - [x] Release motion tracking codebase
 - [x] Release domain randomization
-- [x] Release pretrained LAFAN1 generalist v1 checkpoints
+- [x] Release pretrained LAFAN1 generalist checkpoints
 - [x] Release DAgger code
 - [ ] Release AnyAdapter
-- [ ] Release more pretrained checkpoints
 - [ ] Release real-world deployment code
 
 # Prepare
@@ -94,15 +94,17 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 ## Play pretrained checkpoints
 
-1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `storage/logs/dagger/`. Visualization results: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).
+1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `storage/logs/dagger/`. Visualization results of LAFAN1 generalist v2: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).
 
 2. Run the evaluation script:
 
     ```shell
-    python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name general_tracker_lafan_v1 [--use_viewer] [--use_renderer] [--play_ref_motion]
+    python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
     ```
 
-As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1**, daggered from four teachers. This checkpoint was trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
+As of **May 18, 2026**, we have open-sourced **LAFAN1 generalist v1 and v2**. Generalist v1 is daggered from four teachers and can track most motions. However, it fails on some extremely challenging motions (mainly because some teachers fail to track these motions). Generalist v2 is daggered from eight more carefully designed teachers. Each teacher policy successfully tracks all motions in its motion cluster. The student policy perfectly inherits the capabilities of different teachers and successfully tracked all 40/40 motions.
+
+The checkpoints are trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
 
 ## Train from scratch
 
@@ -162,6 +164,8 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
   ```
 
   For an example DAgger config, please refer to `storage/training_configs/dagger/demo.json`.
+
+  In our experiments, we found that our specialist-to-generalist training framework is a flexible, controllable, and scalable approach for building a general tracker. Different teachers can be flexibly assigned to different categories of motions to maximize tracking quality. The capabilities of different teachers can be perfectly inherited by the student. Moreover, the student’s performance improves significantly with more motion data, more teachers, longer training time, and larger model capacity.
 
 ## Evaluate the model
 
