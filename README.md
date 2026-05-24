@@ -12,6 +12,8 @@ This repository is the official implementation of OpenTrack, an open-source huma
 </div>
 
 # News 🚩
+[May 23, 2026] AnyAdapter training code released. **Now you can finetune your base tracker to endow it with dynamics adaptivity.**
+
 [May 18, 2026] LAFAN1 generalist v2 released. **A single policy can accurately track all 40/40 motions in LaFAN1, including highly challenging ones.**
 
 [April 24, 2026] DAgger training code released. **Now you can distill your teacher trackers into a generalist student tracker.**
@@ -28,7 +30,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 - [x] Release domain randomization
 - [x] Release pretrained LAFAN1 generalist checkpoints
 - [x] Release DAgger code
-- [ ] Release AnyAdapter
+- [x] Release AnyAdapter
 - [ ] Release real-world deployment code
 
 # Prepare
@@ -165,15 +167,24 @@ The checkpoints are trained with simple domain randomization (DR). You may try d
 
   For an example DAgger config, please refer to `storage/training_configs/dagger/demo.json`.
 
-  In our experiments, we found that our specialist-to-generalist training framework is a flexible, controllable, and scalable approach for building a general tracker. Different teachers can be flexibly assigned to different categories of motions to maximize tracking quality. The capabilities of different teachers can be perfectly inherited by the student. Moreover, the student’s performance improves significantly with more motion data, more teachers, longer training time, and larger model capacity.
+  In our experiments, we found that our specialist-to-generalist training framework is a flexible, controllable, and scalable approach for building a general tracker. Different teachers can be flexibly assigned to different categories of motions to maximize tracking quality. As long as you have a specialist teacher, you can seamlessly distill its capabilities into a generalist student. The capabilities of different teachers can be perfectly inherited by the student. The student’s performance improves significantly with more motion data, more teachers, longer training time, and larger model capacity.
+
+### Train the adapter:
+  After training a base policy in an environment with no (or only limited) dynamics randomization, you can further train an adapter in an environment with dynamics randomization enabled (or with a larger degree of randomization).
+  ```shell
+   python -m track_mj.learning.train.train_adapter \
+     --task G1TrackingGeneralDR \
+     --load-exp-name <your_pretrained_tracker_exp_name> \
+     --exp-name <your_adapter_exp_name>
+  ```
 
 ## Evaluate the model
 
 ### Evaluate the specialist teachers
 
   ```shell
-  # First, convert the Brax model checkpoint to ONNX
-  python -m track_mj.app.brax2onnx_tracking --task G1TrackingGeneral --exp_name <your_exp_name>
+  # First, convert the tracker checkpoint to ONNX
+  python -m track_mj.eval.tracking.export_onnx --task G1TrackingGeneral --exp_name <your_exp_name>
   
   # Next, run the evaluation script
   python -m track_mj.eval.tracking.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
@@ -186,6 +197,15 @@ The checkpoints are trained with simple domain randomization (DR). You may try d
    # This writes ONNX to storage/logs/dagger/<your_exp_name>/checkpoints/model.onnx
    # Next, run the evaluation script
    python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
+  ```
+
+### Evaluate the adapter
+  ```shell
+  # First, convert the checkpoint to ONNX
+   python -m track_mj.eval.adapter.export_onnx --task G1TrackingGeneralDR --exp_name <your_adapter_exp_name>
+
+   # Next, run the evaluation script
+   python -m track_mj.eval.adapter.mj_onnx_video --task G1TrackingGeneralDR --exp_name <your_adapter_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
   ```
 
 # Acknowledgement

@@ -15,8 +15,8 @@ from mujoco_playground._src.collision import geoms_colliding
 
 import track_mj as tmj
 from track_mj.envs.g1_tracking.train import base_env as g1_base
-from track_mj.envs.g1_tracking.train import g1_env_tracking_general
-from track_mj.envs.g1_tracking import g1_tracking_constants as consts
+from track_mj.envs.g1_tracking_adapter.train import g1_env_tracking_general
+from track_mj.envs.g1_tracking_adapter import g1_tracking_constants as consts
 from track_mj.utils.dataset.traj_class import (
     Trajectory,
     TrajectoryData,
@@ -225,14 +225,63 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
         restore_value_fn=True,
     )
 
+    mbppo_policy_config = config_dict.create(
+        policy_learning_rate=1e-4,
+        world_model_learning_rate=1e-4,
+        restore_ppo_checkpoint_path=None,
+        use_inverse_dynamics_model=False,
+        use_adapter=True,
+        train_history_encoder_in_policy=False,
+        train_world_model=True,
+        supervised_loss_weight=0.0,
+        ppo_loss_weight=1.0,
+        world_model_gyro_weight=500.0,
+        world_model_gvec_weight=500.0,
+        world_model_joint_pos_weight=1.0,
+        world_model_joint_vel_weight=0.5,
+        world_model_root_height_weight=500.0,
+        world_model_autoregressive=True,
+        network_factory=config_dict.create(
+            embedding_size=128,
+            world_model_output_size=33,
+            history_encoder_hidden_layer_sizes=(),
+            history_encoder_use_conv=True,
+            history_encoder_num_filters=[64, 64],
+            history_encoder_kernel_sizes=[(9,), (6,)],
+            history_encoder_strides=[(5,), (3,)],
+            history_len=env_config.history_len,
+            world_model_hidden_layer_sizes=(512, 512, 256, 256, 256, 128),
+            history_encoder_obs_key="history_state",
+            world_model_obs_key="world_state",
+            joint_vel_scale=env_config.obs_scales_config.joint_vel,
+            dt=env_config.ctrl_dt,
+        ),
+    )
+
+    env_config.world_model_obs_keys = [
+        "avg_gyro_pelvis",
+        "gvec_pelvis",
+        "joint_pos",
+        "avg_joint_vel",
+        "root_height",
+    ]
+    env_config.reference_world_model_obs_key = [
+        "ref_gyro_pelvis",
+        "ref_gvec_pelvis",
+        "ref_joint_pos",
+        "ref_joint_vel",
+        "ref_root_height",
+    ]
+
     config = config_dict.create(
         env_config=env_config,
         policy_config=policy_config,
+        mbppo_policy_config=mbppo_policy_config,
     )
     return config
 
 
-tmj.registry.register("G1TrackingGeneralDR", "tracking_config")(g1_tracking_general_dr_task_config())
+tmj.registry.register("G1TrackingGeneralDR", "tracking_adapter_config")(g1_tracking_general_dr_task_config())
 
 
 def torque_step_dr(
@@ -276,7 +325,7 @@ def torque_step_dr(
     return final_rng, final_data, final_torque
 
 
-@tmj.registry.register("G1TrackingGeneralDR", "tracking_train_env_class")
+@tmj.registry.register("G1TrackingGeneralDR", "tracking_adapter_train_env_class")
 class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
 
     def reset(self, rng: jax.Array, trajectory_data: TrajectoryData = None) -> mjx_env.State:
@@ -361,11 +410,9 @@ class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
         obs, history = self._get_obs(data, traj_data, info)
         if self._config.history_len > 0:
             _, init_history = self._get_obs(data, init_traj_data, info)
-            info["previous_obs"] = jp.stack([init_history] * self._config.history_len, axis=0)
-
-            obs["state"] = jp.concatenate([obs["state"], info["previous_obs"].flatten()], axis=0)
-            obs["privileged_state"] = jp.concatenate([obs["privileged_state"], info["previous_obs"].flatten()], axis=0)
-            info["previous_obs"] = jp.concatenate([info["previous_obs"][1:], history[None, :]], axis=0)
+            init_history_action = jp.concatenate([init_history, info["last_motor_targets"]], axis=0)
+            obs["history_state"] = jp.stack([init_history_action] * self._config.history_len, axis=0).flatten()
+            info["current_history"] = history
 
         reward, done = jp.zeros(2)
         return mjx_env.State(data, obs, reward, done, metrics, info)
@@ -452,11 +499,14 @@ class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
 
         obs, history = self._get_obs(data, traj_data, state.info)
         if self._config.history_len > 0:
-            obs["state"] = jp.concatenate([obs["state"], state.info["previous_obs"].flatten()], axis=0)
-            obs["privileged_state"] = jp.concatenate(
-                [obs["privileged_state"], state.info["previous_obs"].flatten()], axis=0
-            )
-            state.info["previous_obs"] = jp.concatenate([state.info["previous_obs"][1:], history[None, :]], axis=0)
+            obs["history_state"] = jp.concatenate(
+                [
+                    state.obs["history_state"].reshape(self._config.history_len, -1)[1:],
+                    jp.concatenate([state.info["current_history"], state.info["last_motor_targets"]], axis=0)[None, :],
+                ],
+                axis=0,
+            ).flatten()
+            state.info["current_history"] = history
 
         state = state.replace(data=data, obs=obs, reward=reward, done=done)
         # manual reset

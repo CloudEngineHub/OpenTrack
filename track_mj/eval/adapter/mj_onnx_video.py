@@ -18,7 +18,7 @@ from tqdm import tqdm
 from pathlib import Path
 
 import track_mj as tmj
-from track_mj.envs.g1_tracking.play.play_g1_env_tracking_general import PlayG1TrackingGeneralEnv
+from track_mj.envs.g1_tracking_adapter.play.play_g1_env_tracking_general import PlayG1TrackingGeneralEnv
 
 
 @dataclass
@@ -27,7 +27,7 @@ class Args:
     play_ref_motion: bool = False
     use_viewer: bool = False    # passive viewer (with display)
     use_renderer: bool = False  # renderer with video (headless mode)
-    task: str = "G1Tracking"
+    task: str = "G1TrackingGeneral"
 
 
 @dataclass
@@ -37,7 +37,7 @@ class State:
 
 
 def get_latest_ckpt(tag):
-    ckpt_dir = tmj.constant.WANDB_PATH_LOG / "track" / tag / "checkpoints"
+    ckpt_dir = tmj.constant.WANDB_PATH_LOG / "adapter" / tag / "checkpoints"
     ckpts = [ckpt for ckpt in Path(ckpt_dir).glob("*") if not ckpt.name.endswith(".json")]
     ckpts.sort(key=lambda x: int(x.name))
     return ckpts[-1] if ckpts else None
@@ -49,10 +49,10 @@ def _get_rollout_steps(env, env_cfg) -> int:
 
 
 def play(args: Args):
-    env_class = tmj.registry.get(args.task, "tracking_play_env_class")
-    task_cfg = tmj.registry.get(args.task, "tracking_config")
+    env_class = tmj.registry.get(args.task, "tracking_adapter_play_env_class")
+    task_cfg = tmj.registry.get(args.task, "tracking_adapter_config")
     env_cfg = task_cfg.env_config
-    config_path = tmj.constant.WANDB_PATH_LOG / "track" / args.exp_name / "checkpoints" / "config.json"
+    config_path = tmj.constant.WANDB_PATH_LOG / "adapter" / args.exp_name / "checkpoints" / "config.json"
     with open(config_path, "r") as f:
         config = json.load(f)
     
@@ -74,11 +74,17 @@ def play(args: Args):
 
     output_names = ["continuous_actions"]
     policy = rt.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+    input_names = {inp.name for inp in policy.get_inputs()}
+    use_history_input = "history" in input_names
     state = env.reset()
 
     rollout_steps = _get_rollout_steps(env, env_cfg)
     for i in tqdm(range(rollout_steps)):
         onnx_input = {"obs": state.obs["state"].reshape(1, -1).astype(np.float32)}
+        if use_history_input:
+            history_len = env_cfg.history_len
+            history_vec = state.obs["history_state"].reshape(history_len, -1).swapaxes(-1, -2)
+            onnx_input["history"] = history_vec.reshape(1, history_vec.shape[0], history_vec.shape[1]).astype(np.float32)
         action = policy.run(output_names, onnx_input)[0][0]
         state = env.step(state, action)
 
