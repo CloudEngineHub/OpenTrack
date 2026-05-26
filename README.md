@@ -202,7 +202,7 @@ The checkpoints are trained with simple domain randomization (DR). You may try d
 ### Evaluate the adapter
   ```shell
   # First, convert the checkpoint to ONNX
-   python -m track_mj.eval.adapter.export_onnx --task G1TrackingGeneralDR --exp_name <your_adapter_exp_name>
+   python -m track_mj.eval.adapter.export_onnx --task G1TrackingGeneral --exp_name <your_adapter_exp_name>
 
    # Next, run the evaluation script
    python -m track_mj.eval.adapter.mj_onnx_video --task G1TrackingGeneralDR --exp_name <your_adapter_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]

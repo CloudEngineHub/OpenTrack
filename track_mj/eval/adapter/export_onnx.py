@@ -29,6 +29,32 @@ class Args:
     exp_name: str
 
 
+def _prepare_mbppo_export_params(policy_config, mbppo_policy_config, latest_ckpt):
+    """Match train_adapter._prepare_mbppo_training_params, but restore adapter ckpt for export."""
+    params = policy_config.to_dict()
+    params.update(mbppo_policy_config.to_dict())
+    for key in ("network_factory", "progress_fn", "save_checkpoint_path", "restore_params"):
+        params.pop(key, None)
+    if not callable(params.get("randomization_fn")):
+        params.pop("randomization_fn", None)
+    if not callable(params.get("wrap_env_fn")):
+        params.pop("wrap_env_fn", None)
+    params["network_factory"] = functools.partial(
+        make_model_based_ppo_networks,
+        **policy_config.network_factory,
+        **mbppo_policy_config.network_factory,
+    )
+    params.update(
+        num_timesteps=0,
+        episode_length=policy_config.episode_length,
+        normalize_observations=False,
+        restore_checkpoint_path=str(latest_ckpt),
+        wrap_env_fn=wrap_fn,
+        num_envs=1,
+    )
+    return params
+
+
 def main(args: Args):
     ckpt_path = tmj.constant.WANDB_PATH_LOG / "adapter" / args.exp_name / "checkpoints"
     latest_ckpt = get_latest_ckpt(ckpt_path)
@@ -62,21 +88,9 @@ def main(args: Args):
     )
 
     if use_mbppo:
-        network_factory = functools.partial(
-            make_model_based_ppo_networks,
-            **policy_config.network_factory,
-            **mbppo_policy_config.network_factory,
-        )
         train_fn = functools.partial(
             mbppo.train,
-            num_timesteps=0,
-            episode_length=policy_config.episode_length,
-            normalize_observations=False,
-            restore_checkpoint_path=latest_ckpt,
-            network_factory=network_factory,
-            wrap_env_fn=wrap_fn,
-            num_envs=1,
-            **mbppo_policy_config,
+            **_prepare_mbppo_export_params(policy_config, mbppo_policy_config, latest_ckpt),
         )
     else:
         network_factory = functools.partial(make_ppo_networks, **policy_config.network_factory)

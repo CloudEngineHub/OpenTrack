@@ -29,6 +29,8 @@ class State:
     obs: dict
 
 @tmj.registry.register("G1TrackingGeneral", "tracking_adapter_play_env_class")
+@tmj.registry.register("G1TrackingGeneralDR", "tracking_adapter_play_env_class")
+@tmj.registry.register("G1TrackingGeneralTerrainDR", "tracking_adapter_play_env_class")
 class PlayG1TrackingGeneralEnv:
     mj_model: mujoco.MjModel
     mj_data: mujoco.MjData
@@ -192,8 +194,8 @@ class PlayG1TrackingGeneralEnv:
         return State(info, obs)
 
     def _reset_from_current_traj(self):
-        traj_data = self.th.get_current_traj_data(self.current_traj_info)
-        qpos, qvel = traj_data.qpos, traj_data.qvel
+        traj_data = self.th.get_current_traj_data(self.current_traj_info, backend=np)
+        qpos, qvel = np.asarray(traj_data.qpos), np.asarray(traj_data.qvel)
         self.evaluation_metrics = collections.defaultdict(list)
 
         self.mj_data.qpos[:] = qpos
@@ -207,7 +209,7 @@ class PlayG1TrackingGeneralEnv:
         # get the next trajectory data
         init_traj_data = copy.deepcopy(traj_data)
         self.current_traj_info = self.th.update_state_play(self.current_traj_info)
-        traj_data = self.th.get_current_traj_data(self.current_traj_info)
+        traj_data = self.th.get_current_traj_data(self.current_traj_info, backend=np)
         info = {
             "step": 0,
             "last_motor_targets": self.mj_data.qpos[7:].copy(),
@@ -216,16 +218,12 @@ class PlayG1TrackingGeneralEnv:
         }
         obs, history = self.get_obs(traj_data, info)
 
-        # history
+        # history (match train env: history is a separate obs key, not appended to state)
         if self._config.history_len > 0:
             _, init_history = self.get_obs(init_traj_data, info)
             init_history_action = np.concatenate([init_history, info["last_motor_targets"]], axis=0)
             obs["history_state"] = np.stack([init_history_action] * self._config.history_len, axis=0).flatten()
             info["current_history"] = history
-            info["previous_obs"] = np.stack([init_history] * self._config.history_len, axis=0)
-            obs["state"] = np.concatenate([obs["state"], info["previous_obs"].flatten()], axis=0)
-            obs["privileged_state"] = np.concatenate([obs["privileged_state"], info["previous_obs"].flatten()], axis=0)
-            info["previous_obs"] = np.concatenate([info["previous_obs"][1:], history[None, :]], axis=0)
 
         return obs, info
 
@@ -234,12 +232,12 @@ class PlayG1TrackingGeneralEnv:
         step_start = time.time()
 
         if self.play_ref_motion:
-            qpos, qvel = self.th.get_current_traj_data_fast(state.info["traj_info"])
+            qpos, qvel = self.th.get_current_traj_data_fast(state.info["traj_info"], backend=np)
             self.mj_data.qpos[:] = qpos
             self.mj_data.qvel[:] = qvel
             mujoco.mj_forward(self.mj_model, self.mj_data)
         else:
-            qpos, qvel = self.th.get_current_traj_data_fast(state.info["traj_info"])
+            qpos, qvel = self.th.get_current_traj_data_fast(state.info["traj_info"], backend=np)
 
             self.ref_mj_data.qpos[:] = qpos
             self.ref_mj_data.qvel[:] = qvel
@@ -288,8 +286,7 @@ class PlayG1TrackingGeneralEnv:
                 )
         else:
             self.current_traj_info = state.info["traj_info"]
-            traj_data = self.th.get_current_traj_data(state.info["traj_info"])
-            qpos, qvel = traj_data.qpos, traj_data.qvel
+            traj_data = self.th.get_current_traj_data(state.info["traj_info"], backend=np)
             obs, history = self.get_obs(traj_data, state.info)
 
             if self._config.history_len > 0:
@@ -301,11 +298,6 @@ class PlayG1TrackingGeneralEnv:
                     axis=0,
                 ).flatten()
                 state.info["current_history"] = history
-                obs["state"] = np.concatenate([obs["state"], state.info["previous_obs"].flatten()], axis=0)
-                obs["privileged_state"] = np.concatenate(
-                    [obs["privileged_state"], state.info["previous_obs"].flatten()], axis=0
-                )
-                state.info["previous_obs"] = np.concatenate([state.info["previous_obs"][1:], history[None, :]], axis=0)
 
             # update buffer
             state.info["step"] += 1
@@ -320,6 +312,10 @@ class PlayG1TrackingGeneralEnv:
         return State(state.info, obs)
 
     def get_obs(self, traj_data, info):
+        traj_qpos = np.asarray(traj_data.qpos)
+        traj_qvel = np.asarray(traj_data.qvel)
+        traj_cvel = np.asarray(traj_data.cvel) if traj_data.cvel.size > 0 else None
+
         # pose
         gyro_pelvis = self.get_gyro("pelvis")
         gvec_pelvis = self.mj_data.site_xmat[self._pelvis_imu_site_id].reshape(3, 3).T @ np.array([0, 0, -1])
@@ -329,9 +325,9 @@ class PlayG1TrackingGeneralEnv:
         joint_vel = self.mj_data.qvel[6:]
 
         # reference
-        dif_joint_pos = traj_data.qpos[7:] - joint_pos
-        dif_joint_vel = traj_data.qvel[6:] - joint_vel
-        traj_root_rot_mat = quat_to_mat(traj_data.qpos[3:7])
+        dif_joint_pos = traj_qpos[7:] - joint_pos
+        dif_joint_vel = traj_qvel[6:] - joint_vel
+        traj_root_rot_mat = quat_to_mat(traj_qpos[3:7])
 
         ref_feet_height = self.ref_mj_data.site_xpos[self._feet_all_site_id, 2]
 
@@ -344,9 +340,9 @@ class PlayG1TrackingGeneralEnv:
             "dif_joint_pos": dif_joint_pos,
             "dif_joint_vel": dif_joint_vel * self._config.obs_scales_config.dif_joint_vel,
             "ref_feet_height": ref_feet_height,
-            "ref_root_height": traj_data.qpos[2],
-            "ref_root_linvel": (traj_root_rot_mat.T @ traj_data.qvel[:3]) * self._config.obs_scales_config.joint_vel,
-            "ref_root_angvel": traj_data.qvel[3:6] * self._config.obs_scales_config.joint_vel,
+            "ref_root_height": traj_qpos[2],
+            "ref_root_linvel": (traj_root_rot_mat.T @ traj_qvel[:3]) * self._config.obs_scales_config.joint_vel,
+            "ref_root_angvel": traj_qvel[3:6] * self._config.obs_scales_config.joint_vel,
         }
 
         state = np.hstack([state_dict[k] for k in self._config.obs_keys])
@@ -365,11 +361,11 @@ class PlayG1TrackingGeneralEnv:
         )
         ref_world_state = np.concatenate(
             [
-                traj_data.cvel[self.body_id_pelvis, :3] * self._config.obs_scales_config.joint_vel,
+                traj_cvel[self.body_id_pelvis, :3] * self._config.obs_scales_config.joint_vel,
                 self.ref_mj_data.site_xmat[self._pelvis_imu_site_id].reshape(3, 3).T @ np.array([0, 0, -1]),
-                traj_data.qpos[7:][self.obs_joint_ids] - self._default_qpos[self.obs_joint_ids],
-                traj_data.qvel[6:][self.obs_joint_ids] * self._config.obs_scales_config.joint_vel,
-                np.array([traj_data.qpos[2]], dtype=np.float32),
+                traj_qpos[7:][self.obs_joint_ids] - self._default_qpos[self.obs_joint_ids],
+                traj_qvel[6:][self.obs_joint_ids] * self._config.obs_scales_config.joint_vel,
+                np.array([traj_qpos[2]], dtype=np.float32),
             ],
             axis=0,
         )
@@ -420,6 +416,7 @@ class PlayG1TrackingGeneralEnv:
 
         # load trajectory again to ensure the latest transformed trajectories is loaded
         self.th = self.load_trajectory(trajectory, warn=False)
+        self.th.to_numpy()
 
         return trajectory
 
