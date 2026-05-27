@@ -1,0 +1,35 @@
+# Editor and local tooling
+.vscode/
+.idea/
+.cache/
+__pycache__/
+*.py[cod]
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+nohup.out
+
+# CMake and generated build outputs
+build/
+glog-0.6.0/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+**/compile_commands.json
+**/install_manifest.txt
+**/Makefile
+**/Testing/
+
+# Runtime logs
+build/bin/logs/
+deploy_logs/
+
+# For coding agents
+train_essentials/
+
+# Storage
+storage/data
+storage/policy/

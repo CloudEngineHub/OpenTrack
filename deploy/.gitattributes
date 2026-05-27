@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+*.onnx binary
+*.a binary
+*.so binary
+*.wav binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.npz binary
+*.npy binary
