@@ -12,6 +12,8 @@ This repository is the official implementation of OpenTrack, an open-source huma
 </div>
 
 # News 🚩
+[May 28, 2026] Real-world deployment code released.
+
 [May 23, 2026] AnyAdapter training code released. **Now you can finetune your base tracker to endow it with dynamics adaptivity.**
 
 [May 18, 2026] LAFAN1 generalist v2 released. **A single policy can accurately track all 40/40 motions in LaFAN1, including highly challenging ones.**
@@ -31,7 +33,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 - [x] Release pretrained LAFAN1 generalist checkpoints
 - [x] Release DAgger code
 - [x] Release AnyAdapter
-- [ ] Release real-world deployment code
+- [x] Release real-world deployment code
 
 # Prepare
 
@@ -106,7 +108,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 As of **May 18, 2026**, we have open-sourced **LAFAN1 generalist v1 and v2**. Generalist v1 is daggered from four teachers and can track most motions. However, it fails on some extremely challenging motions (mainly because some teachers fail to track these motions). Generalist v2 is daggered from eight more carefully designed teachers. Each teacher policy successfully tracks all motions in its motion cluster. The student policy perfectly inherits the capabilities of different teachers and successfully tracked all 40/40 motions.
 
-The checkpoints are trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
+The checkpoints are trained with simple domain randomization (DR). You may try to deploy it on a Unitree G1 robot with the deployment code.
 
 ## Train from scratch
 
@@ -207,6 +209,10 @@ The checkpoints are trained with simple domain randomization (DR). You may try d
    # Next, run the evaluation script
    python -m track_mj.eval.adapter.mj_onnx_video --task G1TrackingGeneralDR --exp_name <your_adapter_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
   ```
+
+## Real-world deployment
+
+Please refer to [`deploy/README_deployment.md`](deploy/README_deployment.md).
 
 # Acknowledgement
 
